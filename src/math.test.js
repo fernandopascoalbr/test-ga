@@ -4,6 +4,6 @@ const { sum } = require("./math");
 
 describe('test math', () => {
     it('should sum two params', () => {
-        equal(sum(1,1), 3)
+        equal(sum(1,1), 2)
     })
 })
