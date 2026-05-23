@@ -1,6 +1,6 @@
 
 name: ci-node-workflow
-on: 
+on:
   pull_request:
     branches:
       - develop
@@ -8,11 +8,14 @@ on:
 jobs: 
   check-application:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: ['24.4.0', '18.20.8']
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v6
         with:
-          node-version: 24
+          node-version: ${{ matrix.node }}
 
       - run: npm test
       - run: npm start
