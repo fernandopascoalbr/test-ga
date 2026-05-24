@@ -1,18 +1,55 @@
 
 name: ci-node-workflow
-on: 
+on:
   pull_request:
     branches:
       - develop
       - main
 jobs: 
   check-application:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    # strategy:
+    #   matrix:
+    #     node: ['24.4.0', '18.20.8']
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 24
+      - name: Checkout
+        uses: actions/checkout@v2
 
-      - run: npm test
-      - run: npm start
+      - name: Set up node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24.4.0
+      
+      - name: Generate coverage
+        run: npm run test:coverage
+
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@master
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.qualitygate.wait=true
+            -Dsonar.qualitygate.timeout=300
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v4
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Build and push
+        id: docker_build
+        uses: docker/build-push-action@v7
+        with:
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/test-ci:latest
+          # build-args: |
+          #   arg1=value1
+          #   arg2=value2
