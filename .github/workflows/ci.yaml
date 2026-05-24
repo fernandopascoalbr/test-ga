@@ -8,14 +8,38 @@ on:
 jobs: 
   check-application:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node: ['24.4.0', '18.20.8']
+    # strategy:
+    #   matrix:
+    #     node: ['24.4.0', '18.20.8']
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v6
-        with:
-          node-version: ${{ matrix.node }}
+      - name: Checkout
+        uses: actions/checkout@v2
 
+      - name: Set up node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24.4.0 //${{ matrix.node }}
       - run: npm test
       - run: npm start
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v4
+        with:
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v4
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Build and push
+        id: docker_build
+        uses: docker/build-push-action@v7
+        with:
+          push: false
+          tags: ${{ vars.DOCKERHUB_USERNAME }}/test-ci:latest
+          # build-args: |
+          #   arg1=value1
+          #   arg2=value2
